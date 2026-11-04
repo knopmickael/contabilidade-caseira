@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Controle de Gastos</title>
+<script>
+  (function () {
+    var t = localStorage.getItem("contabilidade-theme");
+    document.documentElement.dataset.theme = (t === "neon" || t === "aero") ? t : "aero";
+  })();
+</script>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="app-header">
+  <div class="header-brand">
+    <h1>Controle de Gastos</h1>
+    <button id="btnTheme" class="btn btn-theme" type="button" aria-label="Alternar tema"></button>
+  </div>
+  <div class="header-actions">
+    <button id="btnCategories" class="btn btn-ghost">Categorias</button>
+    <button id="btnToggleView" class="btn btn-ghost">Arquivados</button>
+    <button id="btnNewMonth" class="btn btn-primary">+ Abrir novo mês</button>
+  </div>
+</header>
+
+<main id="board" class="board"></main>
+
+<div id="expenseModal" class="modal-overlay hidden">
+  <div class="modal">
+    <h2 id="expenseModalTitle">Novo gasto</h2>
+    <input type="hidden" id="expenseId">
+    <input type="hidden" id="expenseMonthKey">
+
+    <label>Nome
+      <input type="text" id="expenseName" placeholder="Ex.: Aluguel" autocomplete="off">
+    </label>
+
+    <label>Valor (R$)
+      <input type="text" id="expenseValue" inputmode="decimal" placeholder="0,00" autocomplete="off">
+    </label>
+
+    <label>Categoria
+      <select id="expenseCategory"></select>
+    </label>
+
+    <label id="subWrap">Subcategoria
+      <select id="expenseSub"></select>
+    </label>
+
+    <div id="replicateSection" class="replicate-section">
+      <label class="checkbox-row" for="expenseReplicate">
+        <input type="checkbox" id="expenseReplicate">
+        <span>Replicar em outros meses</span>
+      </label>
+      <div id="replicateMonths" class="replicate-months hidden"></div>
+    </div>
+
+    <div id="installmentSection" class="replicate-section">
+      <label class="checkbox-row" for="expenseInst">
+        <input type="checkbox" id="expenseInst">
+        <span>Parcelado</span>
+      </label>
+      <div id="instCountWrap" class="inst-count-wrap">
+        <label>Total de parcelas
+          <input type="number" id="expenseInstTotal" min="1" max="120" step="1" value="12">
+        </label>
+        <label>Parcela atual
+          <input type="number" id="expenseInstStart" min="1" max="120" step="1" value="1">
+        </label>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button id="expenseCancel" class="btn btn-ghost">Cancelar</button>
+      <button id="expenseSave" class="btn btn-primary">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div id="instToggleModal" class="modal-overlay hidden">
+  <div class="modal">
+    <h2 id="instToggleTitle">Desabilitar gasto parcelado</h2>
+    <p id="instToggleText" class="modal-text"></p>
+    <div class="modal-actions">
+      <button id="btnInstToggleCancel" class="btn btn-ghost">Cancelar</button>
+      <button id="btnInstToggleOne" class="btn btn-ghost">Apenas esta</button>
+      <button id="btnInstToggleAll" class="btn btn-primary">Todas as parcelas</button>
+    </div>
+  </div>
+</div>
+
+<div id="categoryModal" class="modal-overlay hidden">
+  <div class="modal modal-wide">
+    <h2>Categorias</h2>
+    <div id="categoryList" class="category-list"></div>
+    <div class="cat-add-row">
+      <input type="text" id="newCategoryName" placeholder="Nova categoria" autocomplete="off">
+      <button id="btnAddCategory" class="btn btn-primary">Adicionar</button>
+    </div>
+    <div class="modal-actions">
+      <button id="categoryClose" class="btn btn-ghost">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

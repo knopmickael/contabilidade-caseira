@@ -1,0 +1,8 @@
+{
+  "name": "contabilidade",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node --experimental-sqlite server.js"
+  }
+}
