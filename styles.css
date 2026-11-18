@@ -657,17 +657,18 @@ body {
   text-shadow: none;
 }
 
-.footer-va .va-edit-btn {
-  margin-left: 2px;
-  vertical-align: middle;
-  text-shadow: none;
-}
-
 .footer-va-value {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
   font-size: 11px;
   color: var(--muted);
-  margin-top: 1px;
+  margin-top: 8px;
 }
+
+.footer-va-value label { flex: 1; min-width: 0; }
+.footer-va-value .va-input { display: block; width: 100%; margin-top: 4px; }
+.footer-va-value .btn { flex-shrink: 0; }
 
 .exp-va-tag {
   font-size: 9px;

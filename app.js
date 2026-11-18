@@ -596,18 +596,6 @@ function applyInstallmentToggle(all) {
 
 /* ---------- Rodapé: restante ---------- */
 
-function editMonthVa(key, data) {
-  const current = typeof data.va === "number" ? data.va : 0;
-  const input = prompt(
-    `Valor do VA de ${monthLabel(key)} (R$):`,
-    String(current).replace(".", ",")
-  );
-  if (input == null) return;
-  data.va = Math.max(0, parseMoney(input));
-  saveState();
-  render();
-}
-
 function renderFooter(key, data) {
   const footer = el("div", "column-footer");
   const totalIn = data.entries.reduce((s, e) => s + e.value, 0);
@@ -627,14 +615,43 @@ function renderFooter(key, data) {
   if (vaOut > 0) {
     vaLine.appendChild(el("span", "va-used", ` (− ${fmt(vaOut)} em gastos VA)`));
   }
-  const vaEdit = el("button", "icon-btn va-edit-btn", "✎");
-  vaEdit.type = "button";
-  vaEdit.title = `Editar VA do mês (atual: ${fmt(va)})`;
-  vaEdit.onclick = () => editMonthVa(key, data);
-  vaLine.appendChild(vaEdit);
   footer.appendChild(vaLine);
 
-  footer.appendChild(el("div", "footer-va-value", `VA do mês: ${fmt(va)}`));
+  const vaForm = el("form", "footer-va-value");
+  const vaLabel = el("label", null, "VA do mês (R$)");
+  const vaInput = el("input", "va-input");
+  vaInput.type = "text";
+  vaInput.inputMode = "decimal";
+  vaInput.value = String(va).replace(".", ",");
+  vaInput.setAttribute("aria-label", `VA de ${monthLabel(key)} (R$)`);
+  vaLabel.appendChild(vaInput);
+  const vaSave = el("button", "btn btn-ghost", "Salvar VA");
+  vaSave.type = "submit";
+  vaForm.append(vaLabel, vaSave);
+  vaForm.onsubmit = event => {
+    event.preventDefault();
+    const raw = vaInput.value.trim().replace(/R\$\s?/g, "");
+    const normalized = raw.includes(",") ? raw.replace(/\./g, "").replace(",", ".") : raw;
+    const amount = Number(normalized);
+    if (!raw || !Number.isFinite(amount) || amount < 0) {
+      vaInput.setCustomValidity("Informe um valor de VA válido, maior ou igual a zero.");
+      vaInput.reportValidity();
+      return;
+    }
+    data.va = amount;
+    saveState();
+    render();
+    document.querySelector(`.va-input[aria-label="VA de ${monthLabel(key)} (R$)"]`).focus();
+    toast("VA de " + monthLabel(key) + " atualizado.");
+  };
+  vaInput.oninput = () => vaInput.setCustomValidity("");
+  vaInput.onkeydown = event => {
+    if (event.key === "Escape") {
+      vaInput.value = String(va).replace(".", ",");
+      vaInput.setCustomValidity("");
+    }
+  };
+  footer.appendChild(vaForm);
   return footer;
 }
 

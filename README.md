@@ -46,7 +46,8 @@ O frontend é HTML/CSS/JavaScript puro, sem frameworks nem build. O backend é u
 - Ao desabilitar ou habilitar um gasto parcelado, o app pergunta se vale só para aquela parcela ou para todas.
 
 ### VA (vale-alimentação)
-- Cada mês tem um valor de VA editável pelo rodapé. O padrão é R$ 703, usado em meses novos e na criação inicial.
+- Cada mês tem um campo **VA do mês (R$)** no rodapé: informe o valor e clique em **Salvar VA** ou pressione `Enter`. `Esc` cancela a edição. Valores negativos ou inválidos são rejeitados; zero é permitido.
+- Ao duplicar um mês, o VA é herdado do mês anterior, junto com as entradas e os gastos. Depois, cada mês pode ser editado independentemente. O padrão de R$ 703 só é usado quando não existe um valor anterior para copiar.
 - Gastos da categoria **Mercado** têm um botão **VA** para marcar que foram pagos com o vale.
 - Gastos marcados como VA saem do cálculo do restante e abatem do saldo do VA.
 
