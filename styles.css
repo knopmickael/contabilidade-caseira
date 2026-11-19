@@ -326,7 +326,7 @@ body {
 
 .column {
   width: var(--col-width);
-  min-width: var(--col-width);
+  min-width: max(300px, var(--col-width));
   background: var(--panel);
   backdrop-filter: var(--blur);
   -webkit-backdrop-filter: var(--blur);
