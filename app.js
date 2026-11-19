@@ -3,28 +3,33 @@
 /* ================= Estado e persistência ================= */
 
 const MAX_ACTIVE_COLUMNS = 6;
+const STATE_KEY = "contabilidade:state:v1";
 
 let state = null;
 let view = "active"; // "active" | "archived"
-let saveTimer = null;
-
-async function fetchState() {
-  const res = await fetch("/api/state");
-  if (!res.ok) throw new Error("Falha ao carregar estado: " + res.status);
-  const parsed = await res.json();
-  if (!parsed || !parsed.months || !parsed.categories) throw new Error("Estado inválido");
+function loadState() {
+  const raw = localStorage.getItem(STATE_KEY);
+  if (raw === null) return { categories: [], months: {} };
+  const parsed = JSON.parse(raw);
+  if (!parsed || !Array.isArray(parsed.categories) || !parsed.months ||
+      typeof parsed.months !== "object" || Array.isArray(parsed.months)) {
+    throw new Error("Estado local inválido");
+  }
   return parsed;
 }
 
 function saveState() {
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => {
-    fetch("/api/state", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(state),
-    }).catch(err => console.error("Falha ao salvar:", err));
-  }, 250);
+  const error = document.getElementById("storageError");
+  try {
+    localStorage.setItem(STATE_KEY, JSON.stringify(state));
+    error.hidden = true;
+    return true;
+  } catch (err) {
+    console.error("Falha ao salvar:", err);
+    error.textContent = "Não foi possível salvar no navegador. Verifique o espaço e as permissões de armazenamento. As alterações estão apenas nesta aba; não a feche.";
+    error.hidden = false;
+    return false;
+  }
 }
 
 function uid() {
@@ -1089,13 +1094,15 @@ const THEME_KEY = "contabilidade-theme";
 const THEME_LABELS = { aero: "Frutiger Aero", neon: "Neon" };
 
 function currentTheme() {
-  const t = localStorage.getItem(THEME_KEY);
-  return t === "neon" || t === "aero" ? t : "aero";
+  try {
+    const t = localStorage.getItem(THEME_KEY);
+    return t === "neon" || t === "aero" ? t : "aero";
+  } catch { return "aero"; }
 }
 
 function applyTheme(theme) {
   document.documentElement.dataset.theme = theme;
-  localStorage.setItem(THEME_KEY, theme);
+  try { localStorage.setItem(THEME_KEY, theme); } catch { /* Tema funciona sem persistência. */ }
   const btn = document.getElementById("btnTheme");
   if (!btn) return;
   const label = "Alternar tema (atual: " + THEME_LABELS[theme] + ")";
@@ -1157,12 +1164,15 @@ document.addEventListener("keydown", e => {
   }
 });
 
-async function init() {
+function init() {
   try {
-    state = await fetchState();
+    state = loadState();
   } catch (err) {
     console.error(err);
-    toast("Erro ao carregar dados do servidor.");
+    document.getElementById("board").textContent = "Não foi possível carregar os dados locais. Verifique as permissões de armazenamento do navegador. Os dados existentes não foram sobrescritos.";
+    ["btnNewMonth", "btnToggleView", "btnCategories"].forEach(id => {
+      document.getElementById(id).disabled = true;
+    });
     return;
   }
   if (!Object.keys(state.months).length) {

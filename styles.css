@@ -326,7 +326,7 @@ body {
 
 .column {
   width: var(--col-width);
-  min-width: var(--col-width);
+  min-width: max(300px, var(--col-width));
   background: var(--panel);
   backdrop-filter: var(--blur);
   -webkit-backdrop-filter: var(--blur);
@@ -616,6 +616,15 @@ body {
 .icon-btn.del:hover { color: var(--danger); background: var(--danger-hover-bg); text-shadow: var(--glow-danger); }
 
 /* ---------- Rodapé da coluna ---------- */
+
+.storage-error {
+  margin: 8px 16px;
+  padding: 12px;
+  color: var(--danger);
+  background: var(--panel-2);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius);
+}
 
 .column-footer {
   flex-shrink: 0;

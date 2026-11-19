@@ -2,7 +2,7 @@
 
 Aplicação web local para controle de finanças pessoais, organizada em um quadro estilo Kanban com uma coluna por mês. Cada coluna reúne as entradas (receitas) e os gastos do mês, agrupados por categoria, e mostra quanto sobra no fim, com um saldo separado para o VA (vale-alimentação).
 
-O frontend é HTML/CSS/JavaScript puro, sem frameworks nem build. O backend é um servidor Node.js sem dependências externas que persiste o estado em SQLite.
+O frontend é HTML/CSS/JavaScript puro, sem frameworks nem build. Nesta branch, **`localStorage`**, os dados ficam no navegador de cada pessoa e o site pode ser hospedado no GitHub Pages. A versão com servidor e SQLite está preservada na branch **`sqlite`**.
 
 ## Features
 
@@ -71,19 +71,24 @@ Os valores aceitam formatos como `1.234,56`, `10,5` ou `R$ 10`, e são exibidos 
 - Avisos por toast e atalho `Esc` para fechar modais.
 
 ### Persistência
-- O estado completo é enviado ao servidor e salvo no SQLite local `contabilidade.db`.
-- O salvamento é automático, com debounce de 250 ms, a cada alteração.
-- Na primeira execução, o banco pode ser populado por um arquivo opcional `seed-data.js` (`window.SEED_DATA = {...}`). Sem ele, o app começa vazio com o mês corrente.
+- O estado completo é salvo como JSON na chave `contabilidade:state:v1` do `localStorage`.
+- O salvamento é automático e imediato a cada alteração, sem depender de API ou conexão de rede.
+- No primeiro acesso, o app começa vazio com o mês corrente e VA inicial de R$ 703.
+- Cada origem e perfil de navegador tem seu próprio estado. Dispositivos e perfis diferentes não sincronizam; pessoas no mesmo perfil compartilham os dados. Outras abas podem sobrescrever alterações: evite editar em várias abas ao mesmo tempo.
+- Limpar os dados do site apaga o estado. Na navegação anônima, ele normalmente é descartado ao fechar a sessão. Não há backup ou sincronização automática.
+- Falhas de gravação são exibidas em um aviso persistente. Dados ilegíveis não são substituídos silenciosamente.
 
 ## Tecnologias
 
 - Frontend: HTML, CSS e JavaScript puro (`index.html`, `styles.css`, `app.js`)
-- Backend: Node.js com `node:http` e `node:sqlite` (SQLite embutido)
+- Desenvolvimento local: servidor estático Node.js com `node:http`
+- Hospedagem: GitHub Pages, sem backend
 - Sem dependências npm
 
 ## Requisitos
 
-- Node.js com suporte ao módulo `node:sqlite`. A flag `--experimental-sqlite` é usada no start.
+- Navegador moderno com JavaScript e armazenamento local habilitados.
+- Para execução local e testes: Node.js 22 ou superior.
 
 ## Como executar
 
@@ -99,20 +104,30 @@ No Windows, o arquivo `iniciar-contabilidade.bat` sobe o servidor e abre o naveg
 
 | Arquivo | Descrição |
 | --- | --- |
-| `server.js` | Servidor HTTP: arquivos estáticos e API de estado |
+| `server.js` | Servidor estático para desenvolvimento local |
 | `app.js` | Lógica do frontend (render, modais, drag and drop, cálculos) |
 | `index.html` | Estrutura da página e modais |
 | `styles.css` | Estilos e temas |
 | `iniciar-contabilidade.bat` | Atalho para iniciar no Windows |
-| `contabilidade.db` | Banco SQLite (ignorado pelo git) |
+| `app.test.js` | Testes de VA, herança mensal e persistência |
+| `.github/workflows/pages.yml` | Verificação e publicação da branch `localStorage` |
 
-## API
+## GitHub Pages
 
-| Método | Rota | Descrição |
-| --- | --- | --- |
-| GET | `/api/state` | Retorna o estado completo (categorias e meses) |
-| POST | `/api/state` | Substitui o estado salvo (corpo JSON) |
+O workflow `.github/workflows/pages.yml` executa os testes e publica o site a cada push na branch **`localStorage`**. Também pode ser disparado manualmente nessa branch pela aba **Actions**.
+
+Em **Settings → Pages → Build and deployment → Source**, selecione **GitHub Actions**. O artefato publicado contém somente `index.html`, `app.js`, `styles.css` e `.nojekyll`; bancos, backups, testes e arquivos do servidor não são enviados ao Pages.
+
+Endereço: https://knopmickael.github.io/contabilidade-caseira/
+
+Os recursos usam caminhos relativos para funcionar no subdiretório do repositório. Projetos Pages no mesmo domínio compartilham a origem; a chave específica do aplicativo evita colisões acidentais, mas não é uma barreira de segurança entre projetos desse domínio.
+
+## Testes
+
+```bash
+npm test
+```
 
 ## Dados
 
-O estado fica em uma única linha da tabela `state` (chave `app`), serializado como JSON com `categories` e `months`. Cada mês guarda `va`, `entries`, `expenses` e `archived`. Os arquivos `*.db`, `*.db.*` e `*.log` estão no `.gitignore`, então faça backup do `contabilidade.db` por conta própria.
+O estado local é um JSON com `categories` e `months`. Cada mês guarda `va`, `entries`, `expenses` e `archived`. A versão estática não lê nem migra automaticamente um banco SQLite existente. Para continuar usando seu banco local, utilize a branch `sqlite`. Os arquivos `*.db`, `*.db.*` e `*.log` continuam ignorados pelo Git.

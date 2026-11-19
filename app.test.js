@@ -5,7 +5,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const vm = require("node:vm");
 
-function loadApp() {
+function loadApp(values = new Map()) {
   const elements = [];
   function element(tag) {
     const node = {
@@ -20,9 +20,8 @@ function loadApp() {
     elements.push(node);
     return node;
   }
-  const values = new Map();
   const context = vm.createContext({
-    console, Intl, Date, crypto: require("node:crypto").webcrypto,
+    console: { error() {} }, Intl, Date, crypto: require("node:crypto").webcrypto,
     setTimeout, clearTimeout,
     localStorage: {
       getItem: key => values.get(key) ?? null,
@@ -68,3 +67,30 @@ test("VA personalizado é herdado e pode ser alterado independentemente, inclusi
 });
 
 module.exports = { loadApp };
+
+test("localStorage mantém o estado em novas sessões e só começa vazio quando a chave não existe", () => {
+  const app = loadApp();
+  assert.equal(app.run("loadState().categories.length"), 0);
+  app.run("state = { categories: [], months: { '2026-11': { va: 987.65, entries: [], expenses: [] } } }; saveState()");
+  assert.equal(app.run("loadState().months['2026-11'].va"), 987.65);
+  assert.ok(app.values.has("contabilidade:state:v1"));
+  const nextSession = loadApp(app.values);
+  assert.equal(nextSession.run("loadState().months['2026-11'].va"), 987.65);
+});
+
+test("estado corrompido não é substituído silenciosamente por dados vazios", () => {
+  const app = loadApp();
+  app.values.set("contabilidade:state:v1", "{quebrado");
+  assert.throws(() => app.run("loadState()"), { name: "SyntaxError" });
+  assert.equal(app.values.get("contabilidade:state:v1"), "{quebrado");
+  app.values.set("contabilidade:state:v1", '{"categories": [], "months": []}');
+  assert.throws(() => app.run("loadState()"), /Estado local inválido/);
+});
+
+test("falha de armazenamento é sinalizada e mantém o estado em memória", () => {
+  const app = loadApp();
+  app.run("state = { categories: [], months: {} }; localStorage.setItem = () => { throw new Error('QuotaExceededError'); }");
+  assert.equal(app.run("saveState()"), false);
+  assert.equal(app.run("state.categories.length"), 0);
+  assert.ok(app.elements.some(e => e.textContent?.includes("Não foi possível salvar")));
+});
